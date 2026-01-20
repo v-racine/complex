@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "body-parser": "*",
+    "cors": "2.8.5",
+    "express": "5.2.1",
+    "pg": "8.0.3",
+    "redis": "^3.1.2"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon",
+    "start": "NODE_ENV=production node index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
