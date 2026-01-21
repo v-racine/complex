@@ -16,5 +16,5 @@ jobs:
         run: npm ci
         working-directory: ./client
       - name: Run tests
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --forceExit
         working-directory: ./client
