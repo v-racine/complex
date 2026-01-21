@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build production images
+        run: |
+          docker build -t vracine/multi-client:${{ github.ref_name }} -t vracine/multi-client:latest ./client
+          docker build -t vracine/multi-nginx:${{ github.ref_name }} -t vracine/multi-nginx:latest ./nginx
+          docker build -t vracine/multi-server:${{ github.ref_name }} -t vracine/multi-server:latest ./server
+          docker build -t vracine/multi-worker:${{ github.ref_name }} -t vracine/multi-worker:latest ./worker
+
+      - name: Push images to Docker Hub
+        run: |
+          docker push vracine/multi-client:${{ github.ref_name }}
+          docker push vracine/multi-client:latest
+          docker push vracine/multi-nginx:${{ github.ref_name }}
+          docker push vracine/multi-nginx:latest
+          docker push vracine/multi-server:${{ github.ref_name }}
+          docker push vracine/multi-server:latest
+          docker push vracine/multi-worker:${{ github.ref_name }}
+          docker push vracine/multi-worker:latest
