@@ -31,3 +31,36 @@ jobs:
           docker push vracine/multi-server:latest
           docker push vracine/multi-worker:${{ github.ref_name }}
           docker push vracine/multi-worker:latest
+
+deploy:
+  runs-on: ubuntu-latest
+  needs: build-and-push
+  steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+
+    - name: Inject Secrets into Dockerrun.aws.json
+      run: |
+        # 1. Inject the Docker Image Tag (based on the Git Tag)
+        sed -i "s|TAG_PLACEHOLDER|${{ github.ref_name }}|g" Dockerrun.aws.json
+
+        # 2. Inject RDS (Postgres) Host and Password
+        sed -i "s|YOUR_RDS_ENDPOINT|${{ secrets.RDS_ENDPOINT }}|g" Dockerrun.aws.json
+        sed -i "s|YOUR_RDS_PASSWORD|${{ secrets.RDS_PASSWORD }}|g" Dockerrun.aws.json
+
+        # 3. Inject ElastiCache (Redis) Host
+        sed -i "s|YOUR_ELASTICACHE_ENDPOINT|${{ secrets.ELASTICACHE_ENDPOINT }}|g" Dockerrun.aws.json
+
+    - name: Generate deployment package
+      run: zip -r deploy.zip . -x '*.git*' -x 'docker-compose.yml' -x 'Dockerfile' -x '*/Dockerfile' -x '*/Dockerfile.dev' -x 'node_modules/*' -x '*/node_modules/*'
+
+    - name: Deploy to EB
+      uses: einaregilsson/beanstalk-deploy@v22
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: multi-docker
+        environment_name: Multi-docker-env
+        region: us-east-2
+        version_label: ${{ github.ref_name }}
+        deployment_package: deploy.zip
